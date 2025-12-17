@@ -68,6 +68,49 @@ def handle_imbalance(X, y):
     print("Resampled class distribution:", np.bincount(y_res))
     return X_res, y_res
 
+def handle_imbalance_adasyn(X, y):
+    """
+    Applies ADASYN to balance the class distribution.
+    ADASYN (Adaptive Synthetic) generates more synthetic data for harder-to-learn examples.
+    """
+    from imblearn.over_sampling import ADASYN
+    print(f"Original class distribution: {np.bincount(y)}")
+    
+    # sampling_strategy='auto' resamples all not majority
+    adasyn = ADASYN(random_state=42, sampling_strategy='auto')
+    X_res, y_res = adasyn.fit_resample(X, y)
+    
+    print(f"Resampled (ADASYN) class distribution: {np.bincount(y_res)}")
+    return X_res, y_res
+
+def select_features_rfe(X, y, n_features_to_select=10):
+    """
+    Selects the most important features using Recursive Feature Elimination (RFE)
+    with a Random Forest Estimator.
+    """
+    from sklearn.feature_selection import RFE
+    from sklearn.ensemble import RandomForestClassifier
+    
+    print(f"\n--- Feature Selection (RFE) ---")
+    print(f"Selecting top {n_features_to_select} features...")
+    
+    # Use a lightweight RF for selection
+    estimator = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
+    selector = RFE(estimator, n_features_to_select=n_features_to_select, step=1)
+    selector = selector.fit(X, y)
+    
+    selected_mask = selector.support_
+    # Get column names if X is DataFrame, else just return transformed array
+    if isinstance(X, pd.DataFrame):
+        selected_features = X.columns[selected_mask]
+        print(f"Selected Features: {selected_features.tolist()}")
+        X_selected = X.iloc[:, selected_mask]
+    else:
+        print(f"Selected {sum(selected_mask)} features (indices).")
+        X_selected = X[:, selected_mask]
+        
+    return X_selected, selector
+
 def split_data(df, target_col='Diabetes_012', test_size=0.2, random_state=42):
     """
     Splits data into features (X) and target (y), then into train and test sets.
