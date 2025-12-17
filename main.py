@@ -25,7 +25,7 @@ def main():
     data_path = os.path.join(
         project_root, "data", "diabetes_012_health_indicators_BRFSS2015.csv"
     )
-    model_path = os.path.join(project_root, "models", "diabetes_lgbm_model.pkl")
+    model_path = os.path.join(project_root, "models", "diabetes_mlp_model.pkl")
 
     print("--- 1. Data Loading & Cleaning ---")
     if not os.path.exists(data_path):
@@ -45,22 +45,22 @@ def main():
     print("\n--- 2. Preprocessing & Splitting ---")
     X_train, X_test, y_train, y_test = split_data(df)
 
-    # Disable ADASYN this time - it caused overfitting
-    # print("\n--- 2.1 Handling Imbalance (ADASYN) ---")
-    # X_train, y_train = handle_imbalance_adasyn(X_train, y_train)
+    print("\n--- 2.1 Handling Imbalance (ADASYN) ---")
+    print("Applying ADASYN to generate synthetic samples for minority classes...")
+    X_train, y_train = handle_imbalance_adasyn(X_train, y_train)
 
-    print("\n--- 2.2 Feature Selection (RFE) ---")
-    # Reducing noise by selecting top 10 most stable features
-    from src.preprocessing import select_features_rfe
-    X_train_sel, selector = select_features_rfe(X_train, y_train, n_features_to_select=10)
-    X_test_sel = X_test[X_train_sel.columns] # Apply same selection to test
+    # Disable RFE for MLP, let it learn from all features (or rely on ADASYN)
+    # print("\n--- 2.2 Feature Selection (RFE) ---")
+    # from src.preprocessing import select_features_rfe
+    # X_train_sel, selector = select_features_rfe(X_train, y_train, n_features_to_select=10)
+    # X_test_sel = X_test[X_train_sel.columns] 
     
     print("\n--- 3. Feature Scaling ---")
-    X_train_scaled, X_test_scaled, scaler = preprocess_features(X_train_sel, X_test_sel)
+    X_train_scaled, X_test_scaled, scaler = preprocess_features(X_train, X_test)
 
-    print("\n--- 4. Model Training (LightGBM) ---")
-    # Using LightGBM with class_weight='balanced'
-    model = train_and_tune(X_train_scaled, y_train, model_type='lgbm')
+    print("\n--- 4. Model Training (MLP) ---")
+    # Using MLP Classifier
+    model = train_and_tune(X_train_scaled, y_train, model_type='mlp')
 
     print("\n--- 5. Evaluation ---")
     evaluate_model(model, X_test_scaled, y_test)

@@ -62,10 +62,10 @@ def train_and_tune(X_train, y_train, model_type='rf'):
         # Ideally we use the balanced dataset for this.
         clf = MLPClassifier(random_state=42, max_iter=500, early_stopping=True)
         param_grid = {
-            'hidden_layer_sizes': [(50,), (100,), (50, 25)],
-            'activation': ['relu', 'tanh'],
-            'alpha': [0.0001, 0.001, 0.01], # L2 penalty (regularization term) parameter
-            'learning_rate_init': [0.001, 0.01]
+            'hidden_layer_sizes': [(50,50), (100,)],
+            'activation': ['relu'],
+            'alpha': [0.0001], 
+            'learning_rate_init': [0.001]
         }
     else:
         raise ValueError("Unknown model type. Use 'rf', 'brf', 'xgb', or 'lgbm'.")
