@@ -47,6 +47,20 @@ We implemented and tested four distinct approaches to handle the significant cla
     - Pre-diabetic: **15%** (Best detected count: 137/926)
     - Diabetic: **65%**
 
+### Experiment 6: MLP Classifier + ADASYN
+- **Technique**: Multi-Layer Perceptron (Neural Network) with ADASYN oversampling.
+- **Result**: High Accuracy (81%), but **failed to learn minority classes** effectively despite oversampling. It behaved similarly to the baseline Random Forest, favoring the majority class.
+- **Recall**:
+    - Pre-diabetic: **2%** (20 / 926 detected)
+    - Diabetic: **28%**
+
+### Experiment 7: MLP Classifier (No Balancing)
+- **Technique**: MLP on raw, imbalanced data.
+- **Result**: High Accuracy (84%), but **0% Recall** for Pre-diabetics. It learned to ignore the minority class entirely to maximize overall accuracy.
+- **Recall**:
+    - Pre-diabetic: **0%** (0 / 926 detected)
+    - Diabetic: **17%**
+
 ## 3. Comparative Results Table
 
 | Model | Overall Accuracy | Healthy Recall | Pre-diabetic Recall | Diabetic Recall | Verdict |
@@ -56,6 +70,8 @@ We implemented and tested four distinct approaches to handle the significant cla
 | **Balanced RF** | 67.00% | 68% | 14% | **70%** | **Best for Diabetics** |
 | **Hierarchical+ADASYN** | 82.74% | 98% | 0% | 10% | Overfit / Unsafe |
 | **LightGBM + RFE** | 65.00% | 66% | **15%** | 65% | **Best for Pre-diabetics** |
+| **MLP + ADASYN** | 81.25% | 93% | 2% | 28% | Unsafe for screening |
+| **MLP (No Bal)** | **83.75%** | 98% | 0% | 17% | **Useless for Screening** |
 
 ## 4. Critical Insight: The "Glass Ceiling"
 Despite using advanced techniques (SMOTE, ADASYN, Tomek Links, Hierarchical Ensemble), the detection of the **Pre-diabetic** class remained low (max 14%).
