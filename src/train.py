@@ -48,10 +48,10 @@ def train_and_tune(X_train, y_train, model_type='rf'):
         # 'balanced' automatically adjusts weights inversely proportional to class frequencies
         clf = lgb.LGBMClassifier(random_state=42, class_weight='balanced', objective='multiclass', n_jobs=-1)
         param_grid = {
-            'n_estimators': [100, 200, 500],
-            'learning_rate': [0.01, 0.05, 0.1],
-            'num_leaves': [31, 50],  # Controls complexity
-            'min_child_samples': [20, 50] # Helps prevent overfitting
+            'n_estimators': [500],
+            'learning_rate': [0.1],
+            'num_leaves': [50],  # Best from Exp 5
+            'min_child_samples': [20] 
         }
     elif model_type == 'mlp':
         from sklearn.neural_network import MLPClassifier
