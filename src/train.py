@@ -42,8 +42,33 @@ def train_and_tune(X_train, y_train, model_type='rf'):
             'learning_rate': [0.01, 0.05, 0.1],
             'max_depth': [3, 6, 8]
         }
+    elif model_type == 'lgbm':
+        import lightgbm as lgb
+        print("Using LightGBM with class_weight='balanced'...")
+        # 'balanced' automatically adjusts weights inversely proportional to class frequencies
+        clf = lgb.LGBMClassifier(random_state=42, class_weight='balanced', objective='multiclass', n_jobs=-1)
+        param_grid = {
+            'n_estimators': [500],
+            'learning_rate': [0.1],
+            'num_leaves': [50],  # Best from Exp 5
+            'min_child_samples': [20] 
+        }
+    elif model_type == 'mlp':
+        from sklearn.neural_network import MLPClassifier
+        print("Using MLPClassifier (Neural Network)...")
+        # MLP doesn't support class_weight directly in sklearn < 1.6 in a simple way for all solvers, 
+        # but adam/sgd works. However, sklearn's MLP doesn't have a class_weight param. 
+        # We handle imbalance via preprocessing (oversampling/undersampling) or we rely on the network learning it.
+        # Ideally we use the balanced dataset for this.
+        clf = MLPClassifier(random_state=42, max_iter=500, early_stopping=True)
+        param_grid = {
+            'hidden_layer_sizes': [(50,50), (100,)],
+            'activation': ['relu'],
+            'alpha': [0.0001], 
+            'learning_rate_init': [0.001]
+        }
     else:
-        raise ValueError("Unknown model type. Use 'rf' or 'xgb'.")
+        raise ValueError("Unknown model type. Use 'rf', 'brf', 'xgb', or 'lgbm'.")
 
     print(f"Starting Grid Search for {model_type}...")
     # Using f1_macro to prioritize minority classes (Pre-diabetic)

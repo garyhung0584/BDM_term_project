@@ -8,3 +8,4 @@ seaborn
 joblib
 imbalanced-learn
 xgboost
+lightgbm
