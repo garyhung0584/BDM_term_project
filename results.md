@@ -54,12 +54,18 @@ We implemented and tested four distinct approaches to handle the significant cla
     - Pre-diabetic: **2%** (20 / 926 detected)
     - Diabetic: **28%**
 
-### Experiment 7: MLP Classifier (No Balancing)
+### Experiment 8: MLP Classifier (No Balancing)
 - **Technique**: MLP on raw, imbalanced data.
 - **Result**: High Accuracy (84%), but **0% Recall** for Pre-diabetics. It learned to ignore the minority class entirely to maximize overall accuracy.
 - **Recall**:
     - Pre-diabetic: **0%** (0 / 926 detected)
     - Diabetic: **17%**
+
+### Experiment 9: High Precision Tuning (Threshold Moving)
+- **Technique**: Used the best signal model (LightGBM) and increased the decision threshold (>50% to >95%) to filter out false positives for Pre-diabetics.
+- **Result**: **Failed to improve Precision**.
+- **Max Precision**: **3.3%** at Threshold 0.60. Above this threshold, the model stopped detecting anything.
+- **Conclusion**: The model is never "confidently" wrong; the signal for Pre-diabetes is just too weak or essentially identical to "Healthy" in this feature space.
 
 ## 3. Comparative Results Table
 
@@ -68,10 +74,10 @@ We implemented and tested four distinct approaches to handle the significant cla
 | **Baseline RF** | 82.11% | **96%** | 0% | 21% | Unsafe for screening |
 | **XGBoost** | **83.36%** | 96% | 0% | 24% | Unsafe for screening |
 | **Balanced RF** | 67.00% | 68% | 14% | **70%** | **Best for Diabetics** |
-| **Hierarchical+ADASYN** | 82.74% | 98% | 0% | 10% | Overfit / Unsafe |
 | **LightGBM + RFE** | 65.00% | 66% | **15%** | 65% | **Best for Pre-diabetics** |
 | **MLP + ADASYN** | 81.25% | 93% | 2% | 28% | Unsafe for screening |
 | **MLP (No Bal)** | **83.75%** | 98% | 0% | 17% | **Useless for Screening** |
+| **High Precision Tuning** | N/A | N/A | <3% | N/A | **High Precision Impossible** |
 
 ## 4. Critical Insight: The "Glass Ceiling"
 Despite using advanced techniques (SMOTE, ADASYN, Tomek Links, Hierarchical Ensemble), the detection of the **Pre-diabetic** class remained low (max 14%).
