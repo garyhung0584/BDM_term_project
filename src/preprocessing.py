@@ -68,6 +68,79 @@ def handle_imbalance(X, y):
     print("Resampled class distribution:", np.bincount(y_res))
     return X_res, y_res
 
+def handle_imbalance_spark(X, y):
+    """
+    Applies PySpark SMOTE to balance the class distribution.
+    Converts Pandas/Numpy data to Spark DataFrame, runs SMOTE, and converts back.
+    Requires PySpark and the src.smote module.
+    """
+    try:
+        from pyspark.sql import SparkSession
+        from src.smote import Smote
+        from pyspark.ml.feature import VectorAssembler
+        from pyspark.ml.functions import vector_to_array, col
+    except ImportError as e:
+        print(f"Error importing PySpark or Smote: {e}")
+        print("Falling back to SMOTETomek (sklearn based)...")
+        return handle_imbalance(X, y)
+
+    print("Initializing Spark Session for SMOTE...")
+    spark = SparkSession.builder \
+        .appName("DiabetesSMOTE") \
+        .config("spark.driver.memory", "4g") \
+        .getOrCreate()
+        
+    print("Converting data to Spark DataFrame...")
+    # Combine X and y into a single DataFrame for Spark
+    # Ensure X is a DataFrame
+    if not isinstance(X, pd.DataFrame):
+        X_df = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+    else:
+        X_df = X.copy()
+    
+    # Identify feature columns
+    feature_cols = X_df.columns.tolist()
+    
+    # Add target
+    # Ensure y is a Series or array
+    if isinstance(y, pd.Series):
+        y_name = y.name if y.name else "target"
+        X_df[y_name] = y.values
+    else:
+        y_name = "target"
+        X_df[y_name] = y
+        
+    spark_df = spark.createDataFrame(X_df)
+    
+    print("Assembling features...")
+    assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+    spark_df_vec = assembler.transform(spark_df).select("features", y_name)
+    
+    print("Running PySpark SMOTE...")
+    # Using defaults: k=5, percentage=1.0 (doubling minority class)
+    # Note: Smote class handles ONE minority class vs ONE majority class logic currently.
+    smote = Smote(featuresCol="features", labelCol=y_name, percentage=1.0, k=5)
+    balanced_spark_df = smote.transform(spark_df_vec)
+    
+    print("Converting back to Pandas...")
+    
+    # Use vector_to_array to get an array column
+    balanced_spark_df = balanced_spark_df.withColumn("features_arr", vector_to_array(col("features")))
+    
+    # Collect to Pandas
+    pandas_df = balanced_spark_df.select("features_arr", y_name).toPandas()
+    
+    # Split the array column
+    features_matrix = pandas_df["features_arr"].tolist() # List of lists
+    X_res = pd.DataFrame(features_matrix, columns=feature_cols)
+    y_res = pandas_df[y_name] # Series
+    
+    print(f"Resampled (Spark SMOTE) class distribution: {y_res.value_counts().to_dict()}")
+    
+    spark.stop()
+    
+    return X_res, y_res.values
+
 def handle_imbalance_adasyn(X, y):
     """
     Applies ADASYN to balance the class distribution.
